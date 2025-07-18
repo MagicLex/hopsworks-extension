@@ -131,16 +131,21 @@ class PopupController {
     
     chrome.tabs.sendMessage(tab.id, { 
       action: 'startSelection', 
-      targetType: targetType 
+      targetType: targetType === 'productCard' ? 'product' : targetType 
     }, (result) => {
       if (result) {
-        // Update detection results
-        this.detectionResults[targetType] = {
-          selector: result.selector,
-          count: result.count,
-          confidence: 1.0,
-          sample: result.sample
-        };
+        // If product mode, update all fields
+        if (targetType === 'productCard' && result.productCard) {
+          this.detectionResults = { ...this.detectionResults, ...result };
+        } else {
+          // Update single field
+          this.detectionResults[targetType] = {
+            selector: result.selector,
+            count: result.count,
+            confidence: 1.0,
+            sample: result.sample
+          };
+        }
         
         // Refresh display
         this.displayResults();
