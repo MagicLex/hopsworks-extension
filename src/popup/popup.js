@@ -11,13 +11,14 @@ class PopupController {
     this.userDetection = null;
     
     this.initEventListeners();
+    this.loadSavedSelections();
   }
 
   initEventListeners() {
     document.getElementById('analyzeBtn').addEventListener('click', () => this.analyze());
     document.getElementById('generateBtn').addEventListener('click', () => this.showScriptScreen());
     document.getElementById('reanalyzeBtn').addEventListener('click', () => this.analyze());
-    document.getElementById('manualBtn').addEventListener('click', () => this.showManualSelector());
+    document.getElementById('clearBtn').addEventListener('click', () => this.clearSaved());
     document.getElementById('copyBtn').addEventListener('click', () => this.copyScript());
     document.getElementById('backBtn').addEventListener('click', () => this.showResultsScreen());
     
@@ -70,6 +71,9 @@ class PopupController {
       
       this.detectionResults = detectionResults || {};
       this.userDetection = userResults || { confidence: 0, method: 'anonymous', code: '' };
+      
+      // Save after detection
+      await this.saveSelections();
       
       this.displayResults();
       this.showScreen('results');
@@ -180,7 +184,7 @@ class PopupController {
     chrome.tabs.sendMessage(tab.id, { 
       action: 'startSelection', 
       targetType: targetType === 'productCard' ? 'product' : targetType 
-    }, (result) => {
+    }, async (result) => {
       if (result) {
         // If product mode, update all fields
         if (targetType === 'productCard' && result.productCard) {
@@ -195,6 +199,9 @@ class PopupController {
           };
         }
         
+        // Save to storage
+        await this.saveSelections();
+        
         // Refresh display
         this.displayResults();
       }
@@ -204,8 +211,61 @@ class PopupController {
     window.close();
   }
   
-  showManualSelector() {
-    alert('Click individual SELECT buttons next to each element type, or use the detection results as-is.');
+  async saveSelections() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const domain = new URL(tab.url).hostname;
+    
+    const data = {
+      detectionResults: this.detectionResults,
+      userDetection: this.userDetection,
+      timestamp: Date.now()
+    };
+    
+    chrome.storage.local.set({ 
+      [`hw_selection_${domain}`]: data,
+      'hw_last_domain': domain
+    });
+  }
+  
+  async loadSavedSelections() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return;
+    
+    const domain = new URL(tab.url).hostname;
+    const result = await chrome.storage.local.get([`hw_selection_${domain}`]);
+    
+    if (result[`hw_selection_${domain}`]) {
+      const saved = result[`hw_selection_${domain}`];
+      this.detectionResults = saved.detectionResults;
+      this.userDetection = saved.userDetection;
+      
+      // Check if selections are recent (within 24 hours)
+      if (Date.now() - saved.timestamp < 24 * 60 * 60 * 1000) {
+        this.displayResults();
+        this.showScreen('results');
+        
+        // Show persistence indicator
+        document.getElementById('status').textContent = 'LOADED';
+        document.getElementById('status').style.background = '#ff6b00';
+        setTimeout(() => {
+          document.getElementById('status').textContent = 'READY';
+          document.getElementById('status').style.background = '#1eb182';
+        }, 2000);
+      }
+    }
+  }
+  
+  async clearSaved() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const domain = new URL(tab.url).hostname;
+    
+    await chrome.storage.local.remove([`hw_selection_${domain}`]);
+    
+    this.detectionResults = null;
+    this.userDetection = null;
+    
+    // Re-analyze
+    this.analyze();
   }
 
   showScriptScreen() {

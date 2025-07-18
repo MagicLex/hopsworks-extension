@@ -229,3 +229,17 @@ pre {
   border-radius: 1px;
   text-align: center;
 }
+
+.notes {
+  background: #111;
+  border: 1px solid #333;
+  padding: 12px;
+  margin: 16px 0;
+  border-radius: 1px;
+}
+
+.notes p {
+  font-size: 10px;
+  color: #999;
+  margin: 4px 0;
+}
