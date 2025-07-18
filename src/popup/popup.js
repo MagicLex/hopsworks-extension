@@ -12,6 +12,7 @@ class PopupController {
     
     this.initEventListeners();
     this.loadSavedSelections();
+    this.listenForUpdates();
   }
 
   initEventListeners() {
@@ -181,34 +182,22 @@ class PopupController {
   async selectElement(targetType) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
+    // Store the target type in storage so background script can handle it
+    await chrome.storage.local.set({ 
+      pendingSelection: { 
+        targetType: targetType === 'productCard' ? 'product' : targetType,
+        tabId: tab.id 
+      } 
+    });
+    
+    // Send message to start selection
     chrome.tabs.sendMessage(tab.id, { 
       action: 'startSelection', 
       targetType: targetType === 'productCard' ? 'product' : targetType 
-    }, async (result) => {
-      if (result) {
-        // If product mode, update all fields
-        if (targetType === 'productCard' && result.productCard) {
-          this.detectionResults = { ...this.detectionResults, ...result };
-        } else {
-          // Update single field
-          this.detectionResults[targetType] = {
-            selector: result.selector,
-            count: result.count,
-            confidence: 1.0,
-            sample: result.sample
-          };
-        }
-        
-        // Save to storage
-        await this.saveSelections();
-        
-        // Refresh display
-        this.displayResults();
-      }
     });
     
-    // Close popup to let user select on page
-    window.close();
+    // Don't close popup - let user see the selection happen
+    // window.close();
   }
   
   async saveSelections() {
@@ -253,6 +242,16 @@ class PopupController {
         }, 2000);
       }
     }
+  }
+  
+  listenForUpdates() {
+    // Listen for refresh messages from background script
+    chrome.runtime.onMessage.addListener((request) => {
+      if (request.action === 'refreshResults') {
+        // Reload saved selections and refresh display
+        this.loadSavedSelections();
+      }
+    });
   }
   
   async clearSaved() {

@@ -56,6 +56,7 @@ const VisualSelector = {
           z-index: 999999;
           pointer-events: all;
           border-radius: 1px;
+          cursor: move;
         }
         
         #hw-selector-panel h3 {
@@ -219,6 +220,9 @@ const VisualSelector = {
     
     document.getElementById('hw-selector-confirm').addEventListener('click', () => this.complete());
     document.getElementById('hw-selector-cancel').addEventListener('click', () => this.cancel());
+    
+    // Make panel draggable
+    this.makeDraggable(document.getElementById('hw-selector-panel'));
   },
   
   attachListeners() {
@@ -479,6 +483,49 @@ const VisualSelector = {
     }
   },
   
+  makeDraggable(element) {
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    const dragStart = (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+      
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+
+      if (e.target === element || e.target.parentElement === element) {
+        isDragging = true;
+      }
+    };
+
+    const dragEnd = (e) => {
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
+    };
+
+    const drag = (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+
+        element.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+    };
+
+    element.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+  },
+  
   cleanup() {
     this.active = false;
     
@@ -505,8 +552,13 @@ const VisualSelector = {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startSelection') {
     VisualSelector.init(request.targetType || 'product', (result) => {
-      sendResponse(result);
+      // Send result to background script instead of back to popup
+      chrome.runtime.sendMessage({ 
+        action: 'selectionComplete', 
+        result: result 
+      });
     });
+    sendResponse({ status: 'started' });
     return true;
   }
 });
