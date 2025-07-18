@@ -431,15 +431,29 @@ const VisualSelector = {
     
     const result = {
       selector: this.generateSelector(element),
-      count: 1,
+      count: document.querySelectorAll(this.generateSelector(element)).length,
       elements: [element],
       sample: element.textContent.trim()
     };
     
-    this.cleanup();
-    if (this.callback) {
-      this.callback(result);
-    }
+    // Show success feedback
+    const panel = document.getElementById('hw-selector-panel');
+    panel.innerHTML = `
+      <h3 style="background: #1eb182; color: #000; padding: 12px 16px; margin: 0;">SUCCESS!</h3>
+      <div style="padding: 24px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
+        <p style="font-size: 14px; margin-bottom: 16px;">Selection saved successfully!</p>
+        <p style="font-size: 12px; color: #999;">${this.mode}: ${result.sample}</p>
+      </div>
+    `;
+    
+    // Wait a bit then cleanup
+    setTimeout(() => {
+      this.cleanup();
+      if (this.callback) {
+        this.callback(result);
+      }
+    }, 1500);
   },
   
   complete() {

@@ -225,21 +225,35 @@ class PopupController {
     
     if (result[`hw_selection_${domain}`]) {
       const saved = result[`hw_selection_${domain}`];
-      this.detectionResults = saved.detectionResults;
-      this.userDetection = saved.userDetection;
+      this.detectionResults = saved.detectionResults || {};
+      this.userDetection = saved.userDetection || { confidence: 0, method: 'anonymous', code: '' };
       
       // Check if selections are recent (within 24 hours)
       if (Date.now() - saved.timestamp < 24 * 60 * 60 * 1000) {
-        this.displayResults();
-        this.showScreen('results');
-        
-        // Show persistence indicator
-        document.getElementById('status').textContent = 'LOADED';
-        document.getElementById('status').style.background = '#ff6b00';
-        setTimeout(() => {
-          document.getElementById('status').textContent = 'READY';
-          document.getElementById('status').style.background = '#1eb182';
-        }, 2000);
+        // If already on results screen, just refresh display
+        if (!document.getElementById('results').classList.contains('hidden')) {
+          this.displayResults();
+          
+          // Flash update indicator
+          document.getElementById('status').textContent = 'UPDATED';
+          document.getElementById('status').style.background = '#ff6b00';
+          setTimeout(() => {
+            document.getElementById('status').textContent = 'READY';
+            document.getElementById('status').style.background = '#1eb182';
+          }, 1000);
+        } else {
+          // Otherwise show results screen
+          this.displayResults();
+          this.showScreen('results');
+          
+          // Show persistence indicator
+          document.getElementById('status').textContent = 'LOADED';
+          document.getElementById('status').style.background = '#ff6b00';
+          setTimeout(() => {
+            document.getElementById('status').textContent = 'READY';
+            document.getElementById('status').style.background = '#1eb182';
+          }, 2000);
+        }
       }
     }
   }
@@ -248,6 +262,7 @@ class PopupController {
     // Listen for refresh messages from background script
     chrome.runtime.onMessage.addListener((request) => {
       if (request.action === 'refreshResults') {
+        console.log('Received refresh request, reloading selections...');
         // Reload saved selections and refresh display
         this.loadSavedSelections();
       }
