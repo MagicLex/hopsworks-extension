@@ -28,7 +28,7 @@ const VisualSelector = {
           left: 0;
           right: 0;
           bottom: 0;
-          z-index: 999998;
+          z-index: 999999;
           pointer-events: none;
         }
         
@@ -39,7 +39,7 @@ const VisualSelector = {
           right: 0;
           bottom: 0;
           background: rgba(0, 0, 0, 0.7);
-          pointer-events: all;
+          pointer-events: none;
           z-index: 999997;
         }
         
@@ -143,33 +143,35 @@ const VisualSelector = {
         }
         
         .hw-highlight {
-          position: relative;
+          position: relative !important;
           z-index: 999998 !important;
           outline: 3px solid #1eb182 !important;
           outline-offset: 2px !important;
           cursor: pointer !important;
           background-color: rgba(30, 177, 130, 0.1) !important;
+          pointer-events: all !important;
         }
         
         .hw-selected {
-          position: relative;
+          position: relative !important;
           z-index: 999998 !important;
           outline: 4px solid #1eb182 !important;
           background-color: rgba(30, 177, 130, 0.2) !important;
+          pointer-events: all !important;
         }
         
         .hw-schema-item {
-          position: relative;
+          position: relative !important;
           z-index: 999998 !important;
           outline: 2px dashed #ff6b00 !important;
           outline-offset: 1px !important;
+          pointer-events: all !important;
         }
         
         body.hw-selecting * {
           cursor: crosshair !important;
         }
       </style>
-      <div id="hw-page-dim"></div>
       <div id="hw-selector-panel">
         <h3>${this.mode === 'product' ? 'SELECT PRODUCT' : 'MANUAL SELECTION'}</h3>
         <div id="hw-selector-instructions" class="content">
@@ -206,13 +208,14 @@ const VisualSelector = {
       </div>
     `;
     
-    document.body.appendChild(this.overlay);
-    document.body.classList.add('hw-selecting');
-    
-    // Dim the page
+    // Create and insert dimmer first
     const dimmer = document.createElement('div');
     dimmer.id = 'hw-page-dim';
-    document.body.insertBefore(dimmer, document.body.firstChild);
+    document.body.appendChild(dimmer);
+    
+    // Then add overlay
+    document.body.appendChild(this.overlay);
+    document.body.classList.add('hw-selecting');
     
     document.getElementById('hw-selector-confirm').addEventListener('click', () => this.complete());
     document.getElementById('hw-selector-cancel').addEventListener('click', () => this.cancel());
