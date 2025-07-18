@@ -22,6 +22,7 @@ class PopupController {
     document.getElementById('clearBtn').addEventListener('click', () => this.clearSaved());
     document.getElementById('copyBtn').addEventListener('click', () => this.copyScript());
     document.getElementById('backBtn').addEventListener('click', () => this.showResultsScreen());
+    document.getElementById('detachBtn').addEventListener('click', () => this.openInWindow());
     
     document.getElementById('apiKey').addEventListener('input', () => this.regenerateScript());
   }
@@ -289,6 +290,27 @@ class PopupController {
 
   showResultsScreen() {
     this.showScreen('results');
+  }
+  
+  async openInWindow() {
+    // Save current state
+    await this.saveSelections();
+    
+    // Get current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Open popup in a new window
+    chrome.windows.create({
+      url: chrome.runtime.getURL('src/popup/index.html'),
+      type: 'popup',
+      width: 450,
+      height: 600,
+      left: 100,
+      top: 100
+    });
+    
+    // Close this popup
+    window.close();
   }
 
   regenerateScript() {
