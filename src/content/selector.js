@@ -11,6 +11,7 @@ const VisualSelector = {
     this.callback = callback;
     this.active = true;
     this.selectedProduct = null;
+    this.selectedElement = null;
     this.detectedSchema = {};
     
     this.createOverlay();
@@ -263,7 +264,7 @@ const VisualSelector = {
     if (this.mode === 'product') {
       this.selectProduct(target);
     } else {
-      this.selectElement(target);
+      this.previewElement(target);
     }
     
     return false;
@@ -425,15 +426,62 @@ const VisualSelector = {
     return element.tagName.toLowerCase();
   },
   
-  selectElement(element) {
-    // For non-product mode
+  previewElement(element) {
+    // Clear previous selections
+    document.querySelectorAll('.hw-selected').forEach(el => {
+      el.classList.remove('hw-selected');
+    });
+    
+    // Select this element
     element.classList.add('hw-selected');
+    this.selectedElement = element;
+    
+    const selector = this.generateSelector(element);
+    const similarCount = document.querySelectorAll(selector).length;
+    
+    // Update panel to show preview
+    const panel = document.getElementById('hw-selector-panel');
+    panel.innerHTML = `
+      <h3 style="background: #1eb182; color: #000; padding: 12px 16px; margin: 0;">PREVIEW: ${this.mode.toUpperCase()}</h3>
+      <div class="content" style="padding: 16px;">
+        <div class="field">
+          <div class="field-label">SELECTED ELEMENT</div>
+          <div class="field-value">${element.tagName} - ${selector}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">VALUE</div>
+          <div class="field-value" style="font-weight: bold;">${element.textContent.trim().substring(0, 50)}${element.textContent.length > 50 ? '...' : ''}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">SIMILAR ELEMENTS FOUND</div>
+          <div class="field-value">${similarCount} total</div>
+        </div>
+        ${element.href ? `
+        <div class="field">
+          <div class="field-label">LINK</div>
+          <div class="field-value" style="font-size: 10px;">${element.href}</div>
+        </div>
+        ` : ''}
+      </div>
+      <div class="actions" style="padding: 16px; border-top: 1px solid #333; display: flex; gap: 8px;">
+        <button id="hw-validate-selection" style="flex: 1; background: #1eb182; color: #000; border: none; padding: 10px; cursor: pointer; font-family: inherit; font-weight: bold;">VALIDATE</button>
+        <button id="hw-try-again" class="secondary" style="flex: 1; background: #333; color: #fff; border: none; padding: 10px; cursor: pointer; font-family: inherit;">TRY AGAIN</button>
+      </div>
+    `;
+    
+    // Add event listeners
+    document.getElementById('hw-validate-selection').addEventListener('click', () => this.validateSelection());
+    document.getElementById('hw-try-again').addEventListener('click', () => this.resetSelection());
+  },
+  
+  validateSelection() {
+    if (!this.selectedElement) return;
     
     const result = {
-      selector: this.generateSelector(element),
-      count: document.querySelectorAll(this.generateSelector(element)).length,
-      elements: [element],
-      sample: element.textContent.trim()
+      selector: this.generateSelector(this.selectedElement),
+      count: document.querySelectorAll(this.generateSelector(this.selectedElement)).length,
+      elements: [this.selectedElement],
+      sample: this.selectedElement.textContent.trim()
     };
     
     // Show success feedback
@@ -443,7 +491,7 @@ const VisualSelector = {
       <div style="padding: 24px; text-align: center;">
         <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
         <p style="font-size: 14px; margin-bottom: 16px;">Selection saved successfully!</p>
-        <p style="font-size: 12px; color: #999;">${this.mode}: ${result.sample}</p>
+        <p style="font-size: 12px; color: #999;">${this.mode}: ${result.sample.substring(0, 30)}...</p>
       </div>
     `;
     
@@ -454,6 +502,29 @@ const VisualSelector = {
         this.callback(result);
       }
     }, 1500);
+  },
+  
+  resetSelection() {
+    // Clear selection and go back to initial state
+    document.querySelectorAll('.hw-selected').forEach(el => {
+      el.classList.remove('hw-selected');
+    });
+    
+    this.selectedElement = null;
+    
+    // Reset panel
+    const panel = document.getElementById('hw-selector-panel');
+    panel.innerHTML = `
+      <h3>${this.mode === 'product' ? 'SELECT PRODUCT' : 'MANUAL SELECTION'}</h3>
+      <div id="hw-selector-instructions" class="content" style="padding: 16px; background: #111; border-bottom: 1px solid #333; font-size: 11px; line-height: 1.6;">
+        Select elements for: ${this.mode}
+      </div>
+      <div class="actions" style="padding: 16px; border-top: 1px solid #333; display: flex; gap: 8px;">
+        <button id="hw-selector-cancel" class="secondary" style="flex: 1; background: #333; color: #fff; border: none; padding: 10px; cursor: pointer; font-family: inherit;">CANCEL</button>
+      </div>
+    `;
+    
+    document.getElementById('hw-selector-cancel').addEventListener('click', () => this.cancel());
   },
   
   complete() {
