@@ -443,37 +443,55 @@ const VisualSelector = {
   },
   
   complete() {
-    if (!this.selectedProduct) {
+    if (!this.selectedProduct && this.mode === 'product') {
       alert('No product selected');
       return;
     }
     
-    // Build complete results
-    const results = {
-      productCard: {
-        selector: this.generateSelector(this.selectedProduct),
-        count: document.querySelectorAll(this.generateSelector(this.selectedProduct)).length,
-        confidence: 1.0
-      }
-    };
+    // Show success feedback
+    const panel = document.getElementById('hw-selector-panel');
+    const originalContent = panel.innerHTML;
     
-    // Add detected schema fields
-    Object.entries(this.detectedSchema).forEach(([key, data]) => {
-      if (data && data.selector) {
-        results[key] = {
-          selector: data.selector,
-          count: document.querySelectorAll(data.selector).length,
-          confidence: 1.0,
-          sample: data.value
-        };
-      }
-    });
+    panel.innerHTML = `
+      <h3 style="background: #1eb182; color: #000; padding: 12px 16px; margin: 0;">SUCCESS!</h3>
+      <div style="padding: 24px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
+        <p style="font-size: 14px; margin-bottom: 16px;">Selection saved successfully!</p>
+        <p style="font-size: 12px; color: #999;">Check the extension popup for results.</p>
+      </div>
+    `;
     
-    this.cleanup();
-    
-    if (this.callback) {
-      this.callback(results);
+    // Build results
+    let results;
+    if (this.mode === 'product') {
+      results = {
+        productCard: {
+          selector: this.generateSelector(this.selectedProduct),
+          count: document.querySelectorAll(this.generateSelector(this.selectedProduct)).length,
+          confidence: 1.0
+        }
+      };
+      
+      // Add detected schema fields
+      Object.entries(this.detectedSchema).forEach(([key, data]) => {
+        if (data && data.selector) {
+          results[key] = {
+            selector: data.selector,
+            count: document.querySelectorAll(data.selector).length,
+            confidence: 1.0,
+            sample: data.value
+          };
+        }
+      });
     }
+    
+    // Wait a bit then cleanup
+    setTimeout(() => {
+      this.cleanup();
+      if (this.callback) {
+        this.callback(results);
+      }
+    }, 1500);
   },
   
   cancel() {
