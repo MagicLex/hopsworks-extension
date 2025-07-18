@@ -17,6 +17,7 @@ class PopupController {
     document.getElementById('analyzeBtn').addEventListener('click', () => this.analyze());
     document.getElementById('generateBtn').addEventListener('click', () => this.showScriptScreen());
     document.getElementById('reanalyzeBtn').addEventListener('click', () => this.analyze());
+    document.getElementById('manualBtn').addEventListener('click', () => this.showManualSelector());
     document.getElementById('copyBtn').addEventListener('click', () => this.copyScript());
     document.getElementById('backBtn').addEventListener('click', () => this.showResultsScreen());
     
@@ -68,6 +69,7 @@ class PopupController {
       const detection = this.detectionResults[key];
       const item = document.createElement('div');
       item.className = 'detection-item';
+      item.dataset.key = key;
       
       if (detection) {
         item.classList.add('success');
@@ -75,12 +77,14 @@ class PopupController {
           <strong>${label}:</strong>
           <span class="value">✓ ${detection.count} found</span>
           <span class="confidence">${Math.round(detection.confidence * 100)}%</span>
+          <button class="select-btn" data-target="${key}">↻</button>
         `;
       } else {
         item.classList.add(required ? 'warning' : 'normal');
         item.innerHTML = `
           <strong>${label}:</strong>
           <span class="value">✗ Not detected</span>
+          <button class="select-btn" data-target="${key}">SELECT</button>
         `;
       }
       
@@ -112,6 +116,43 @@ class PopupController {
     }
     
     container.appendChild(userItem);
+    
+    // Add click handlers for individual select buttons
+    document.querySelectorAll('.select-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetType = e.target.dataset.target;
+        this.selectElement(targetType);
+      });
+    });
+  }
+  
+  async selectElement(targetType) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    chrome.tabs.sendMessage(tab.id, { 
+      action: 'startSelection', 
+      targetType: targetType 
+    }, (result) => {
+      if (result) {
+        // Update detection results
+        this.detectionResults[targetType] = {
+          selector: result.selector,
+          count: result.count,
+          confidence: 1.0,
+          sample: result.sample
+        };
+        
+        // Refresh display
+        this.displayResults();
+      }
+    });
+    
+    // Close popup to let user select on page
+    window.close();
+  }
+  
+  showManualSelector() {
+    alert('Click individual SELECT buttons next to each element type, or use the detection results as-is.');
   }
 
   showScriptScreen() {
