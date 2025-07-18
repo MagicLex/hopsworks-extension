@@ -26,25 +26,6 @@ header {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #000;
-  gap: 8px;
-}
-
-.detach-btn {
-  background: transparent;
-  border: 1px solid #333;
-  color: #999;
-  padding: 4px 8px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: 8px;
-  border-radius: 1px;
-  line-height: 1;
-}
-
-.detach-btn:hover {
-  border-color: #1eb182;
-  color: #1eb182;
 }
 
 h1 {
@@ -261,4 +242,14 @@ pre {
   font-size: 10px;
   color: #999;
   margin: 4px 0;
+}
+
+.script-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.script-actions button {
+  flex: 1;
 }

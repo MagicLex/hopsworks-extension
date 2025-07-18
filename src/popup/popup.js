@@ -21,8 +21,8 @@ class PopupController {
     document.getElementById('reanalyzeBtn').addEventListener('click', () => this.analyze());
     document.getElementById('clearBtn').addEventListener('click', () => this.clearSaved());
     document.getElementById('copyBtn').addEventListener('click', () => this.copyScript());
+    document.getElementById('viewFullBtn').addEventListener('click', () => this.viewFullScript());
     document.getElementById('backBtn').addEventListener('click', () => this.showResultsScreen());
-    document.getElementById('detachBtn').addEventListener('click', () => this.openInWindow());
     
     document.getElementById('apiKey').addEventListener('input', () => this.regenerateScript());
   }
@@ -342,6 +342,23 @@ class PopupController {
     } catch (error) {
       console.error('Failed to copy:', error);
     }
+  }
+  
+  async viewFullScript() {
+    const script = document.getElementById('generatedScript').textContent;
+    
+    // Save script to storage
+    await chrome.storage.local.set({ hw_generated_script: script });
+    
+    // Open script viewer in new window
+    chrome.windows.create({
+      url: chrome.runtime.getURL('src/popup/script-viewer.html?storage=true'),
+      type: 'popup',
+      width: 800,
+      height: 600,
+      left: 100,
+      top: 100
+    });
   }
 }
 
