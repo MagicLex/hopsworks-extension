@@ -106,4 +106,4 @@ After installing:
 
 ---
 
-© 2024 Hopsworks. All rights reserved.
+© 2025 Hopsworks. All rights reserved.
