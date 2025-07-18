@@ -35,21 +35,69 @@ class PopupController {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
+      // Check if tab is valid
+      if (!tab || !tab.id) {
+        throw new Error('No active tab found');
+      }
+      
+      // Check if URL is valid (not chrome:// pages)
+      if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://'))) {
+        throw new Error('Cannot analyze Chrome system pages');
+      }
+      
+      // Send messages with timeout
+      const sendMessageWithTimeout = (tabId, message, timeout = 5000) => {
+        return new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            reject(new Error('Message timeout'));
+          }, timeout);
+          
+          chrome.tabs.sendMessage(tabId, message, (response) => {
+            clearTimeout(timer);
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve(response);
+            }
+          });
+        });
+      };
+      
       const [detectionResults, userResults] = await Promise.all([
-        chrome.tabs.sendMessage(tab.id, { action: 'analyze' }),
-        chrome.tabs.sendMessage(tab.id, { action: 'detectUser' })
+        sendMessageWithTimeout(tab.id, { action: 'analyze' }),
+        sendMessageWithTimeout(tab.id, { action: 'detectUser' })
       ]);
       
-      this.detectionResults = detectionResults;
-      this.userDetection = userResults;
+      this.detectionResults = detectionResults || {};
+      this.userDetection = userResults || { confidence: 0, method: 'anonymous', code: '' };
       
       this.displayResults();
       this.showScreen('results');
+      document.getElementById('status').textContent = 'READY';
+      document.getElementById('status').style.background = '#1eb182';
     } catch (error) {
       console.error('Analysis failed:', error);
+      
+      // Show error in UI
+      const errorMessage = error.message.includes('Chrome system pages') 
+        ? 'Cannot analyze Chrome pages. Try on a real website.'
+        : error.message.includes('timeout')
+        ? 'Page not responding. Try refreshing.'
+        : 'Analysis failed. Refresh page and try again.';
+      
       this.showScreen('welcome');
       document.getElementById('status').textContent = 'ERROR';
       document.getElementById('status').style.background = '#ff0000';
+      
+      // Show error message
+      const welcomeSection = document.getElementById('welcome');
+      const existingError = welcomeSection.querySelector('.error-message');
+      if (existingError) existingError.remove();
+      
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.textContent = errorMessage;
+      welcomeSection.insertBefore(errorDiv, welcomeSection.querySelector('button'));
     }
   }
 

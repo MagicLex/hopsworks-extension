@@ -218,3 +218,14 @@ pre {
   align-items: center;
   justify-content: space-between;
 }
+
+.error-message {
+  background: #ff0000;
+  color: #fff;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 1px;
+  text-align: center;
+}
