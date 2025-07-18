@@ -23,7 +23,7 @@ Auto-generate ML recommendation scripts for any e-commerce site in 30 seconds.
    - Review detection results
    - Enter your API key and generate script
 
-## What it does
+## Features
 
 The extension automatically detects:
 - Product cards and listings
@@ -59,10 +59,11 @@ Tested on:
 src/
 ├── content/
 │   ├── analyzer.js    # Detects e-commerce elements
-│   └── detector.js    # User identification strategies
+│   ├── detector.js    # User identification strategies
+│   └── selector.js    # Visual element selector
 ├── popup/
 │   ├── index.html     # Extension UI
-│   ├── styles.css     # Brutalist design
+│   ├── styles.css     # UI styling
 │   └── popup.js       # UI controller
 ├── background/
 │   └── service-worker.js
@@ -72,7 +73,7 @@ src/
 
 ## Development
 
-No build step required - it's vanilla JS for performance.
+No build step required - vanilla JavaScript for performance.
 
 To modify:
 1. Edit files in `src/`
@@ -88,13 +89,13 @@ To modify:
 
 ## Design
 
-Brutalist, functional design:
-- 1px border radius max
+Clean, functional design:
+- 1px border radius
 - #1eb182 accent color
 - Monospace typography
-- No bullshit
+- Optimized for clarity
 
-## Next Steps
+## Usage
 
 After installing:
 1. Visit an e-commerce site
@@ -105,4 +106,4 @@ After installing:
 
 ---
 
-Built with zero fluff, maximum functionality.
+© 2024 Hopsworks. All rights reserved.
